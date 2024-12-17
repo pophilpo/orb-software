@@ -1,10 +1,9 @@
-
 use anyhow::{anyhow, Result};
 use zenoh_orbcomm::orb_actions::Query;
 use std::collections::HashMap;
 use std::process::Command as ShellCommand;
 use std::time::Duration;
-use tokio::{signal, time};
+use tokio::{signal, time, sync::oneshot};
 use tracing::{info, warn};
 use tracing_subscriber::FmtSubscriber;
 use zenoh::{
@@ -19,25 +18,22 @@ use zenoh::{
 async fn main() -> Result<()> {
     init_logging();
 
-    // Retrieve orb properties dynamically using shell commands.
+    // Retrieve orb properties dynamically.
     let orb_id = get_orb_property("orb-id", "UnknownOrb")?;
     let orb_name = get_orb_property("cat /usr/persistent/orb-name", "DevOrb")?;
     let orb_hw_version = get_orb_property("cat /usr/persistent/hardware_version", "UnknownHWVersion")?;
 
     info!("Starting Orb server with ID: {}", orb_id);
 
-    // Open Zenoh session for pub/sub communication.
     let session = zenoh::open(Config::default())
         .await
         .map_err(|e| anyhow!("Failed to open zenoh session: {}", e))?;
 
-    // Populate orb data with key-value pairs for query responses.
     let mut orb_data = HashMap::new();
     orb_data.insert(Query::Id.to_key(&orb_id), orb_id.clone());
     orb_data.insert(Query::Name.to_key(&orb_id), orb_name);
     orb_data.insert(Query::HardwareVersion.to_key(&orb_id), orb_hw_version);
 
-    // Declare queryable resources for orb properties.
     for key in orb_data.keys() {
         let queryable = session
             .declare_queryable(key)
@@ -47,49 +43,59 @@ async fn main() -> Result<()> {
         tokio::spawn(handle_queries(queryable, orb_data.clone()));
     }
 
-    // Subscribe to commands directed at this orb.
     let command_subscriber = session
         .declare_subscriber(&format!("orb/{}/command/*", orb_id))
         .await
         .map_err(|e| anyhow!("Failed to declare command subscriber: {}", e))?;
 
-    // Periodically broadcast the orb's ID for discovery purposes.
+    // Create a one-shot channel for shutdown signaling.
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+
     let discovery_publisher = session
         .declare_publisher("orb/id")
         .await
         .map_err(|e| anyhow!("Failed to declare discovery publisher: {}", e))?;
 
-    // Orb ID broadcasting loop used for discovery.
-    let broadcast_task = tokio::spawn(async move {
-        loop {
-            if let Err(e) = discovery_publisher.put(orb_id.clone()).await {
-                warn!("Failed to publish orb ID: {}", e);
-            }
-            time::sleep(Duration::from_secs(1)).await;
-        }
-    });
+    // Spawn the broadcasting task with shutdown support.
+    let broadcast_task = tokio::spawn(broadcast_orb_id(discovery_publisher, orb_id.clone(), shutdown_rx));
 
-    // Handle incoming commands or server shutdown.
+    // Graceful shutdown logic
     tokio::select! {
         _ = signal::ctrl_c() => {
-            info!("Received Ctrl+C. Shutting down...");
+            info!("Received Ctrl+C. Sending shutdown signal...");
+            let _ = shutdown_tx.send(()); // Send shutdown signal
         }
         res = handle_commands(command_subscriber) => {
             if let Err(e) = res {
                 warn!("Command handling ended with an error: {}", e);
-            } else {
-                warn!("Command handling ended unexpectedly. Shutting down...");
             }
         }
     }
 
-    broadcast_task.abort();
+    broadcast_task.await?;
     info!("Server shutdown complete.");
     Ok(())
 }
 
-/// Retrieve orb properties using shell commands.
-fn get_orb_property(command: &str, default: &str) -> Result<String> {
+async fn broadcast_orb_id(
+    discovery_publisher: zenoh::pubsub::Publisher<'_>,
+    orb_id: String,
+    mut shutdown_rx: oneshot::Receiver<()>,
+) {
+    loop {
+        tokio::select! {
+            _ = &mut shutdown_rx => {
+                info!("Shutdown signal received for broadcaster. Exiting...");
+                break;
+            }
+            _ = time::sleep(Duration::from_secs(1)) => {
+                if let Err(e) = discovery_publisher.put(orb_id.clone()).await {
+                    warn!("Failed to publish orb ID: {}", e);
+                }
+            }
+        }
+    }
+}fn get_orb_property(command: &str, default: &str) -> Result<String> {
     let output = ShellCommand::new("sh")
         .arg("-c")
         .arg(command)
@@ -115,7 +121,6 @@ fn get_orb_property(command: &str, default: &str) -> Result<String> {
     }
 }
 
-/// Handle queries by responding with orb data.
 async fn handle_queries(
     queryable: Queryable<FifoChannelHandler<ZenohQuery>>,
     orb_data: HashMap<String, String>,
@@ -135,7 +140,6 @@ async fn handle_queries(
     Ok(())
 }
 
-/// Handle commands such as shutdown, reboot, or reset gimbal.
 async fn handle_commands(command_subscriber: Subscriber<FifoChannelHandler<Sample>>) -> Result<()> {
     while let Ok(command) = command_subscriber.recv_async().await {
         let key = command.key_expr().clone();
@@ -161,7 +165,6 @@ async fn handle_commands(command_subscriber: Subscriber<FifoChannelHandler<Sampl
     Ok(())
 }
 
-/// Execute shell commands for handling operations.
 fn run_shell_command(command: &str) -> Result<String> {
     let output = ShellCommand::new("sh")
         .arg("-c")
@@ -180,7 +183,6 @@ fn run_shell_command(command: &str) -> Result<String> {
     }
 }
 
-/// Initialize structured logging with tracing.
 fn init_logging() {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(tracing::Level::INFO)
@@ -188,4 +190,3 @@ fn init_logging() {
     tracing::subscriber::set_global_default(subscriber)
         .expect("Failed to set global tracing subscriber");
 }
-
