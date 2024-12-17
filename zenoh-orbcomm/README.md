@@ -1,4 +1,4 @@
-# Orb Network Management
+# Orb Communication
 
 This project provides a **client-server system** to manage and interact with Orbs using Zenoh for communication. The client allows discovery, querying, and sending commands to Orbs, while the server handles responses and command execution.
 
