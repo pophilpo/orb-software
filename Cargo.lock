@@ -1602,6 +1602,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
+name = "colored"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
+dependencies = [
+ "lazy_static",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "combine"
 version = "4.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2180,6 +2190,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "dyn-clone"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2440,7 +2456,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "887d93f60543e9a9362ef8a21beedd0a833c5d9610e18c67abe15a5963dcb1a4"
 dependencies = [
  "bit_field",
- "flume",
+ "flume 0.11.0",
  "half",
  "lebe",
  "miniz_oxide",
@@ -2564,6 +2580,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
 dependencies = [
  "num-traits",
+]
+
+[[package]]
+name = "flume"
+version = "0.10.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1657b4441c3403d9f7b3409e47575237dac27b1b5726df654a6ecbf92f0f7577"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "nanorand",
+ "pin-project",
+ "spin 0.9.8",
 ]
 
 [[package]]
@@ -4638,7 +4667,7 @@ version = "0.2.10"
 dependencies = [
  "color-eyre",
  "data-encoding",
- "event-listener 2.5.3",
+ "event-listener 5.3.1",
  "eyre",
  "futures",
  "orb-attest-dbus",
@@ -5039,7 +5068,7 @@ dependencies = [
  "crc32fast",
  "eyre",
  "figment",
- "flume",
+ "flume 0.11.0",
  "gpt",
  "hex",
  "jod-thread",
@@ -5097,7 +5126,7 @@ dependencies = [
  "can-rs 0.0.0",
  "clap",
  "color-eyre",
- "flume",
+ "flume 0.11.0",
  "httpmock",
  "jod-thread",
  "libc",
@@ -5752,7 +5781,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9552f850d5f0964a4e4d0bf306459ac29323ddfbae05e35a7c0d35cb0803cc5"
 dependencies = [
  "anyhow",
- "itertools 0.12.1",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "syn 2.0.90",
@@ -8973,7 +9002,7 @@ dependencies = [
  "ahash 0.8.11",
  "async-trait",
  "bytes",
- "flume",
+ "flume 0.11.0",
  "futures",
  "git-version",
  "itertools 0.13.0",
@@ -9128,7 +9157,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1736b771262ae7353ea6a93bc01b370ae1c73e9738f6756d42c689d364a2338"
 dependencies = [
  "async-trait",
- "flume",
+ "flume 0.11.0",
  "futures",
  "rustls 0.23.20",
  "rustls-webpki 0.102.8",
@@ -9295,6 +9324,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "zenoh-orbcomm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "colored",
+ "dotenv",
+ "flume 0.10.14",
+ "futures",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "zenoh",
+]
+
+[[package]]
 name = "zenoh-plugin-trait"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9385,7 +9430,7 @@ checksum = "f286465564fdd4d4fe7458ddfdad7b1bd3ff6ea2a06f070d48246d843ce05777"
 dependencies = [
  "async-trait",
  "crossbeam-utils",
- "flume",
+ "flume 0.11.0",
  "lazy_static",
  "lz4_flex",
  "paste",
@@ -9419,7 +9464,7 @@ checksum = "70c4ec6031ca256e77b3478f9f415f9546bfeb5c8b3e36dc700674f1b57ab75f"
 dependencies = [
  "async-trait",
  "const_format",
- "flume",
+ "flume 0.11.0",
  "home",
  "humantime",
  "lazy_static",

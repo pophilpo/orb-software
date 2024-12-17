@@ -38,7 +38,7 @@ members = [
   "verity-tree-calc",
   "wpa-supplicant",
   "zbus-proxies",
-  "zbus-proxies/cli",
+  "zbus-proxies/cli", "zenoh-orbcomm",
 ]
 
 [workspace.package]
