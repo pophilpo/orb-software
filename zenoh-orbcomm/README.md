@@ -47,7 +47,7 @@ Zenoh is used as the communication layer for lightweight pub-sub and query capab
 
 The server automatically broadcasts its Orb ID for discovery and listens for incoming commands.
 
-## Available Commands
+## Available Client Commands
 
 ### `Ping`
 Discover all available Orbs on the network.
