@@ -149,11 +149,14 @@ Available commands:
 ## Project Structure
 ```
 .
-├── client.rs       # Client implementation for queries, commands, and discovery
-├── server.rs       # Server implementation to handle queries and commands
-├── orb_actions.rs  # Definitions of Query and Command enums
-├── Cargo.toml      # Project dependencies and metadata
-└── README.md       # Documentation
+├── Cargo.toml
+├── README.md
+└── src
+    ├── bin
+    │   ├── client.rs # Client implementation
+    │   └── server.rs # Server implementation
+    ├── lib.rs
+    └── orb_actions.rs # Definitions of Query and Command enums
 ```
 
 ## Dependencies
